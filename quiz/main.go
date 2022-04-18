@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type problema struct {
@@ -30,6 +31,7 @@ func parseLinhas(linhas [][]string) []problema {
 func main() {
 
 	csvArquivo := flag.String("csv", "problems.csv", "um arquivo cvs no formato 'pergunta,resposta'")
+	tempoLimite := flag.Int("tempo", 60, "tempo limite em segundos")
 	flag.Parse()
 
 	arquivo, err := os.Open(*csvArquivo)
@@ -47,14 +49,26 @@ func main() {
 
 	problemas := parseLinhas(linhas)
 
+	timer := time.NewTimer(time.Duration(*tempoLimite) * time.Second)
+
 	var resposta string
-	acertos := 0
+	var acertos int = 0
+
+getoutloop:
 	for i, problema := range problemas {
-		fmt.Printf("Problema %d: %s = ", i+1, problema.pergunta)
-		fmt.Scanf("%s\n", &resposta)
-		if resposta == problema.resposta {
-			acertos++
+
+		select {
+		case <-timer.C:
+			fmt.Println("O seu tempo acabou")
+			break getoutloop
+		default:
+			fmt.Printf("Problema %d: %s = ", i+1, problema.pergunta)
+			fmt.Scanf("%s\n", &resposta)
+			if resposta == problema.resposta {
+				acertos++
+			}
 		}
 	}
-	fmt.Printf("Acertou %d de %d\n", acertos, len(problemas))
+
+	fmt.Printf("Você acertou %d de %d\n", acertos, len(problemas))
 }
